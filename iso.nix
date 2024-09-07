@@ -19,7 +19,7 @@ let
           echo "$i is a floppy, skipping..."
           continue
         fi
-        if grep -ql "^$i" /proc/mounts; then
+        if grep -ql "^$i" <(mount); then
           echo "$i is in use, skipping..."
         else
           DEVICE_MAIN="$i"
