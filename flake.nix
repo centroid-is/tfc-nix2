@@ -47,7 +47,9 @@
           -drive file=$disk1,format=qcow2,if=none,id=nvm \
           -device nvme,serial=deadbeef,drive=nvm \
           -bios ${pkgs.OVMF.fd}/FV/OVMF.fd \
-          -cdrom "$(echo ${inputs.self.nixosConfigurations.iso.config.system.build.isoImage}/iso/*.iso)"
+          -device usb-ehci \
+          -device usb-storage,drive=usbdisk \
+          -drive id=usbdisk,if=none,readonly=on,file="$(echo ${inputs.self.nixosConfigurations.iso.config.system.build.isoImage}/iso/*.iso)"
       '';
     };
   };
