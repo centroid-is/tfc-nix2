@@ -49,7 +49,10 @@
           -bios ${pkgs.OVMF.fd}/FV/OVMF.fd \
           -device usb-ehci \
           -device usb-storage,drive=usbdisk \
-          -drive id=usbdisk,if=none,readonly=on,file="$(echo ${inputs.self.nixosConfigurations.iso.config.system.build.isoImage}/iso/*.iso)"
+          -drive id=usbdisk,if=none,readonly=on,file="$(echo ${inputs.self.nixosConfigurations.iso.config.system.build.isoImage}/iso/*.iso)" \
+          -netdev user,id=net0,hostfwd=tcp::2222-:22 \
+          -device virtio-net-pci,netdev=net0 \
+          -vnc :0 
       '';
     };
   };
