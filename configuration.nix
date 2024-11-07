@@ -93,20 +93,9 @@
 
 
   #### WESTON ####
-    # Allow VNC connections on port 5900
+
+  # Allow VNC connections on port 5900
   networking.firewall.allowedTCPPorts = [ 5900 ];
-
-  # Define the 'weston' user and group if they don't already exist
-  users.users.weston = {
-    isSystemUser = true;
-    description = "Weston User";
-    home = "/home/weston";
-    shell = pkgs.bash;
-    group = "weston";
-    createHome = true;
-  };
-
-  users.groups.weston = {};
 
   systemd.services.create-keys = {
     description = "Create TLS keys and certificates on startup";
@@ -125,7 +114,7 @@
         "/usr/bin/openssl genrsa -out /var/tfc/certs/tls.key 2048"
         "/usr/bin/openssl req -new -key /var/tfc/certs/tls.key -out /var/tfc/certs/tls.csr -subj '/C=IS/ST=Höfuðborgar Svæðið/L=Reykjavik/O=Centroid'"
         "/usr/bin/openssl x509 -req -days 365000 -signkey /var/tfc/certs/tls.key -in /var/tfc/certs/tls.csr -out /var/tfc/certs/tls.crt"
-        "chown -R weston:weston /var/tfc/certs/"
+        "chown -R tfc:users /var/tfc/"
       ];
     };
 
@@ -186,7 +175,7 @@
   #   requiresMountsFor = [ "/run" ];
 
   #   # Configure the socket to listen on /run/wayland-0
-  #   listenStream = "/run/wayland-0";
+  #   # listenStream = "/run/wayland-0";
 
   #   # Set the socket permissions
   #   socketMode = "0775";
@@ -196,13 +185,14 @@
   #   socketGroup = "wayland";
 
   #   # Remove the socket file when the service stops
-  #   removeOnStop = true;
+  #   # removeOnStop = true;
 
   #   # Specify that this socket should be wanted by the sockets target
   #   wantedBy = [ "sockets.target" ];
   # };
 
   # Define the Weston systemd service
+  systemd.targets."graphical.target".enable = true;
   systemd.services.weston = {
     description = "Weston, a Wayland compositor, as a system service";
     documentation = [
@@ -212,8 +202,8 @@
     ];
 
     # Service Dependencies
-    requires = [ "systemd-user-sessions.service" "weston.socket" ];
-    after = [ "systemd-user-sessions.service" "plymouth-quit-wait.service" "dbus.socket" ];
+    requires = [ "systemd-user-sessions.service" ];
+    after = [ "systemd-user-sessions.service" "dbus.socket" ];
     wants = [ "dbus.socket" ];
 
     # Ensure the service starts before the graphical target
@@ -225,15 +215,11 @@
     # Service Configuration
     serviceConfig = {
       Type = "notify";
-      # Environment variables can be defined here or sourced from a file
-      # If you have specific environment variables, you can include them like this:
-      # Environment = [ "VAR_NAME=value" ];
-      # Alternatively, to source from /etc/default/weston, use:
-      EnvironmentFile = "/etc/default/weston";
+      Environment = [ "WAYLAND_DISPLAY=wayland-1" ];
       ExecStart = "${pkgs.weston}/bin/weston --modules=systemd-notify.so";
-      User = "weston";
-      Group = "weston";
-      WorkingDirectory = "/home/weston";
+      User = "tfc";
+      Group = "users";
+      WorkingDirectory = "/home/tfc";
       PAMName = "weston-autologin";
 
       # Optional Watchdog settings (uncomment if needed)
@@ -256,10 +242,16 @@
       UtmpMode = "user";
     };
 
-    wantedBy = [ "graphical.target" ];
+    wantedBy = [ "default.target" ];
   };
 
   systemd.services.weston.enable = true;
+
+  security.pam.services."weston-autologin".text = ''
+    auth       include    login
+    account    include    login
+    session    include    login
+  '';
 
   #### END WESTON ####
 
