@@ -77,6 +77,9 @@
     libinput
     libseat
     weston
+    dbus
+    plymouth
+    systemd
   ];
 
   # Enable the OpenSSH daemon.
@@ -87,6 +90,178 @@
 
   # Allow the user to log in as root without a password.
   users.users.root.initialHashedPassword = "";
+
+
+  #### WESTON ####
+    # Allow VNC connections on port 5900
+  networking.firewall.allowedTCPPorts = [ 5900 ];
+
+  # Define the 'weston' user and group if they don't already exist
+  users.users.weston = {
+    isSystemUser = true;
+    description = "Weston User";
+    home = "/home/weston";
+    shell = pkgs.bash;
+    group = "weston";
+    createHome = true;
+  };
+
+  users.groups.weston = {};
+
+  systemd.services.create-keys = {
+    description = "Create TLS keys and certificates on startup";
+
+    # Only run the service if /var/tfc/certs/tls.crt does NOT exist
+    unitConfig.ConditionPathExists = "!/var/tfc/certs/tls.crt";
+
+    serviceConfig = {
+      Type = "oneshot";
+      User = "root";
+      Group = "root";
+
+      # Define the sequence of commands to execute
+      ExecStart = [
+        "mkdir -p /var/tfc/certs"
+        "/usr/bin/openssl genrsa -out /var/tfc/certs/tls.key 2048"
+        "/usr/bin/openssl req -new -key /var/tfc/certs/tls.key -out /var/tfc/certs/tls.csr -subj '/C=IS/ST=Höfuðborgar Svæðið/L=Reykjavik/O=Centroid'"
+        "/usr/bin/openssl x509 -req -days 365000 -signkey /var/tfc/certs/tls.key -in /var/tfc/certs/tls.csr -out /var/tfc/certs/tls.crt"
+        "chown -R weston:weston /var/tfc/certs/"
+      ];
+    };
+
+    # Ensure the service is part of the graphical.target
+    wantedBy = [ "graphical.target" ];
+  };
+
+  #   # Ensure the /etc/xdg/weston directory exists
+  # environment.etc."xdg/weston".directory = {
+  #   ensureDir = true;
+  #   mode = "0755";
+  #   owner = "root";
+  #   group = "root";
+  # };
+
+
+  # Add the weston.ini file to /etc/xdg/weston/weston.ini
+  environment.etc."xdg/weston/weston.ini".text = ''
+    [core]
+    modules=screen-share.so
+    backend=drm
+    shell=kiosk-shell.so
+    require-input=false
+    idle-time=0
+    renderer=gl
+
+    [shell]
+    background-image=none
+    clock-format=none
+    panel-position=none
+    locking=false
+    num-workspaces=1
+    allow_zap=false
+    close-animation=none
+    startup-animation=none
+    focus-animation=none
+
+    [vnc]
+    refresh-rate=60
+    # tls-key=/var/tfc/certs/tls.key
+    # tls-cert=/var/tfc/certs/tls.crt
+
+    [screen-share]
+    command=weston --backend=vnc-backend.so --vnc-tls-cert=/var/tfc/certs/tls.crt --vnc-tls-key=/var/tfc/certs/tls.key --shell=fullscreen-shell.so --no-config --debug
+    start-on-startup=true
+
+    [output]
+    name=vnc
+    resizeable=false
+  '';
+
+  #   # Define the weston.socket
+  # systemd.sockets."weston.socket" = {
+  #   # Description of the socket
+  #   description = "Weston socket";
+
+  #   # Ensure the /run directory is mounted
+  #   requiresMountsFor = [ "/run" ];
+
+  #   # Configure the socket to listen on /run/wayland-0
+  #   listenStream = "/run/wayland-0";
+
+  #   # Set the socket permissions
+  #   socketMode = "0775";
+
+  #   # Define the user and group for the socket
+  #   socketUser = "weston";
+  #   socketGroup = "wayland";
+
+  #   # Remove the socket file when the service stops
+  #   removeOnStop = true;
+
+  #   # Specify that this socket should be wanted by the sockets target
+  #   wantedBy = [ "sockets.target" ];
+  # };
+
+  # Define the Weston systemd service
+  systemd.services.weston = {
+    description = "Weston, a Wayland compositor, as a system service";
+    documentation = [
+      "man:weston(1)"
+      "man:weston.ini(5)"
+      "http://wayland.freedesktop.org/"
+    ];
+
+    # Service Dependencies
+    requires = [ "systemd-user-sessions.service" "weston.socket" ];
+    after = [ "systemd-user-sessions.service" "plymouth-quit-wait.service" "dbus.socket" ];
+    wants = [ "dbus.socket" ];
+
+    # Ensure the service starts before the graphical target
+    before = [ "graphical.target" ];
+
+    # Condition to ensure /dev/tty0 exists
+    unitConfig.ConditionPathExists = "/dev/tty0";
+
+    # Service Configuration
+    serviceConfig = {
+      Type = "notify";
+      # Environment variables can be defined here or sourced from a file
+      # If you have specific environment variables, you can include them like this:
+      # Environment = [ "VAR_NAME=value" ];
+      # Alternatively, to source from /etc/default/weston, use:
+      EnvironmentFile = "/etc/default/weston";
+      ExecStart = "${pkgs.weston}/bin/weston --modules=systemd-notify.so";
+      User = "weston";
+      Group = "weston";
+      WorkingDirectory = "/home/weston";
+      PAMName = "weston-autologin";
+
+      # Optional Watchdog settings (uncomment if needed)
+      # TimeoutStartSec = "60";
+      # WatchdogSec = "20";
+
+      # TTY Configuration
+      TTYPath = "/dev/tty7";
+      TTYReset = "yes";
+      TTYVHangup = "yes";
+      TTYVTDisallocate = "yes";
+
+      # Standard IO Configuration
+      StandardInput = "tty-fail";
+      StandardOutput = "journal";
+      StandardError = "journal";
+
+      # Utmp Configuration
+      UtmpIdentifier = "tty7";
+      UtmpMode = "user";
+    };
+
+    wantedBy = [ "graphical.target" ];
+  };
+
+  systemd.services.weston.enable = true;
+
+  #### END WESTON ####
 
   # This option defines the first version of NixOS you have installed on this particular machine,
   # and is used to maintain compatibility with application data (e.g. databases) created on older NixOS versions.
