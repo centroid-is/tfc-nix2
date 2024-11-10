@@ -44,11 +44,11 @@
           -m 2G \
           -device virtio-balloon \
           -device virtio-rng-pci \
-          -drive file=$disk1,format=qcow2,if=none,id=nvm \
           -device nvme,serial=deadbeef,drive=nvm \
-          -bios ${pkgs.OVMF.fd}/FV/OVMF.fd \
           -device usb-ehci \
           -device usb-storage,drive=usbdisk \
+          -drive file=$disk1,format=qcow2,if=none,id=nvm,cache=unsafe,werror=report \
+          -drive if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware} \
           -drive id=usbdisk,if=none,readonly=on,file="$(echo ${inputs.self.nixosConfigurations.iso.config.system.build.isoImage}/iso/*.iso)"
       '';
     };
