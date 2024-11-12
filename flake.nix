@@ -61,37 +61,31 @@
     packages.x86_64-linux.tfc-hmi = let
       pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
       version = "2024.11.0";
-    in pkgs.stdenv.mkDerivation {
-        pname = "tfc-hmi";
+      src = pkgs.fetchurl {
+        url = "https://github.com/centroid-is/tfc-hmi/releases/download/v${version}/example-elinux.tar.gz";
+        sha256 = "9ac27f7fa092db0de2b8a85aa88afd44a247130f808b1207269f3c05a6d0fbfa";
+      };
+      tfc-hmi-bin = pkgs.stdenv.mkDerivation {
+        pname = "tfc-hmi-bin";
         version = version;
-        src = pkgs.fetchurl {
-          url = "https://github.com/centroid-is/tfc-hmi/releases/download/v${version}/example-elinux.tar.gz";
-          sha256 = "9ac27f7fa092db0de2b8a85aa88afd44a247130f808b1207269f3c05a6d0fbfa";
-        };
+        src = src;
         sourceRoot = ".";
         installPhase = ''
-          echo "Source root: $sourceRoot"
-          echo "Installing to $out"
           mkdir -p $out
           cp -r * $out/
-          export out=$out
-
-          echo "{ pkgs ? import <nixpkgs> {} }:
-
-
-          (pkgs.buildFHSEnv {
-            name = \"flutter-env\";
-            targetPkgs = pkgs: (with pkgs; [
-              wayland
-              libxkbcommon
-              fontconfig
-              libGL
-            ]);
-            multiPkgs = pkgs: (with pkgs; []);
-            runScript = \"$out/example --bundle=$out\";
-          }).env
-        " > $out/shell.nix
-      '';
+        '';
+      };
+    in pkgs.buildFHSUserEnv {
+      name = "tfc-hmi";
+      targetPkgs = pkgs: [
+        pkgs.wayland
+        pkgs.libxkbcommon
+        pkgs.fontconfig
+        pkgs.libGL
+        pkgs.vulkan-loader
+        pkgs.mesa
+      ];
+      runScript = "${tfc-hmi-bin}/example --bundle=${tfc-hmi-bin}";
     };
   };
 }

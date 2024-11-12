@@ -216,7 +216,9 @@
     # Service Configuration
     serviceConfig = {
       Type = "notify";
-      Environment = [ "WAYLAND_DISPLAY=wayland-1" ];
+      Environment = [ 
+        "WAYLAND_DISPLAY=wayland-1" # todo this does not respond to changes
+      ];
       ExecStart = "${pkgs.weston}/bin/weston --modules=systemd-notify.so";
       User = "tfc";
       Group = "users";
@@ -259,13 +261,14 @@
   systemd.services.tfc-hmi = {
     description = "tfc-hmi";
     serviceConfig = {
-      WorkingDirectory = "${tfc-hmi}";
-      ExecStart = "${pkgs.nix}/bin/nix-shell --extra-experimental-features flakes ${tfc-hmi}/shell.nix";
+      ExecStart = "${tfc-hmi}/bin/tfc-hmi";
+      RuntimeDirectory = "tfc";
       User = "tfc";
       Group = "users";
     };
     environment = {
       WAYLAND_DISPLAY = "wayland-1";
+      XDG_RUNTIME_DIR = "/run/user/1000"; # todo get 1000 from user
     };
     after = [ "weston.service" ];
     wantedBy = [ "default.target" ];
