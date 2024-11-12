@@ -54,8 +54,8 @@
           -drive if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware} \
           -drive id=usbdisk,if=none,readonly=on,file="$(echo ${inputs.self.nixosConfigurations.iso.config.system.build.isoImage}/iso/*.iso)" \
           -netdev user,id=net0,hostfwd=tcp::2222-:22 \
-          -device virtio-net-pci,netdev=net0 # \
-          # -vnc :0
+          -device virtio-net-pci,netdev=net0 \
+          -vnc :0
       '';
     };
     packages.x86_64-linux.tfc-hmi = let

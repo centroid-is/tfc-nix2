@@ -159,7 +159,7 @@
     # tls-cert=/var/tfc/certs/tls.crt
 
     [screen-share]
-    command=weston --backend=vnc-backend.so --vnc-tls-cert=/var/tfc/certs/tls.crt --vnc-tls-key=/var/tfc/certs/tls.key --shell=fullscreen-shell.so --no-config --debug
+    command=weston --backend=vnc-backend.so --vnc-tls-cert=/var/tfc/certs/tls.crt --vnc-tls-key=/var/tfc/certs/tls.key --shell=kiosk-shell.so --no-config --debug
     start-on-startup=true
 
     [output]
