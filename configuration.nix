@@ -2,7 +2,7 @@
 # your system. Help is available in the configuration.nix(5) man page, on
 # https://search.nixos.org/options and in the NixOS manual (`nixos-help`).
 
-{ config, lib, pkgs, modulesPath, ... }:
+{ config, lib, pkgs, modulesPath, tfc-hmi, ... }:
 
 {
   imports = [
@@ -42,6 +42,7 @@
     password = "tfc";
     shell = "${pkgs.fish}/bin/fish";
     packages = with pkgs; [
+      tfc-hmi
       tree
     ];
   };
@@ -75,7 +76,7 @@
     vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
     wget
     libinput
-    libseat
+    seatd
     weston
     dbus
     plymouth
@@ -254,6 +255,40 @@
   '';
 
   #### END WESTON ####
+
+  systemd.services.tfc-hmi = {
+    description = "tfc-hmi";
+    serviceConfig = {
+      WorkingDirectory = "${tfc-hmi}";
+      ExecStart = "${pkgs.nix}/bin/nix-shell --extra-experimental-features flakes ${tfc-hmi}/shell.nix";
+      User = "tfc";
+      Group = "users";
+    };
+    environment = {
+      WAYLAND_DISPLAY = "wayland-1";
+    };
+    after = [ "weston.service" ];
+    wantedBy = [ "default.target" ];
+  };
+
+
+services.dbus.packages = [
+  (pkgs.writeTextFile {
+    name = "dbus-centroid-conf";
+    destination = "/share/dbus-1/system.d/is.centroid.conf";
+    text = ''
+      <!DOCTYPE busconfig PUBLIC
+       "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
+       "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+      <busconfig>
+       <policy context="default">
+        <allow own_prefix="is.centroid"/>
+        <allow send_destination_prefix="is.centroid"/>
+       </policy>
+      </busconfig>
+    '';
+  })
+];
 
   # This option defines the first version of NixOS you have installed on this particular machine,
   # and is used to maintain compatibility with application data (e.g. databases) created on older NixOS versions.

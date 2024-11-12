@@ -35,6 +35,10 @@ let
 
       DISKO_DEVICE_MAIN=''${DEVICE_MAIN#"/dev/"} ${targetSystem.config.system.build.diskoScript} 2> /dev/null
 
+      echo "Copying configuration files..."
+      mkdir -p /mnt/etc/nixos
+      cp -r /etc/nixos/* /mnt/etc/nixos/
+
       echo "Installing the system..."
       nixos-install --no-channel-copy --no-root-password --option substituters "" --system ${targetSystem.config.system.build.toplevel}
 
@@ -75,6 +79,11 @@ in
       StandardInput = "null";
     };
   };
+
+  environment.etc."nixos/configuration.nix".source = ./configuration.nix;
+  environment.etc."nixos/disko.nix".source = ./disko.nix;
+  environment.etc."nixos/flake.nix".source = ./flake.nix;
+  environment.etc."nixos/flake.lock".source = ./flake.lock;
 
   system.stateVersion = "24.05";
 }
