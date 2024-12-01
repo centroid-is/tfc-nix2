@@ -60,10 +60,10 @@
     };
     packages.x86_64-linux.tfc-hmi = let
       pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
-      version = "2024.11.0";
+      version = "2024.12.3";
       src = pkgs.fetchurl {
         url = "https://github.com/centroid-is/tfc-hmi/releases/download/v${version}/example-elinux.tar.gz";
-        sha256 = "9ac27f7fa092db0de2b8a85aa88afd44a247130f808b1207269f3c05a6d0fbfa";
+        sha256 = "278dddd44e93ff1936886a4ad7f97913fc36307ee64ab81980444837a07c3338";
       };
       tfc-hmi-bin = pkgs.stdenv.mkDerivation {
         pname = "tfc-hmi-bin";

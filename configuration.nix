@@ -10,9 +10,11 @@
     ./disko.nix
   ];
 
+  boot.kernelPackages = pkgs.linuxPackages-rt;
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.timeout = 0;
 
   networking.hostName = "tfc"; # Define your hostname.
   # Pick only one of the below networking options.
@@ -81,17 +83,25 @@
     dbus
     plymouth
     systemd
+    rustc
+    cargo
+    bash-completion
   ];
+
+  services.zerotierone = {
+    enable = true;
+    #   joinNetworks = [
+    # "6465f4ee45356976"
+    # "71e441cc137b93c8"
+    # ];
+  };
 
   # Enable the OpenSSH daemon.
   services.openssh.enable = true;
+  services.openssh.settings.PermitRootLogin = "yes";
 
   # Automatically log in at the virtual consoles.
   services.getty.autologinUser = "tfc";
-
-  # Allow the user to log in as root without a password.
-  users.users.root.initialHashedPassword = "";
-
 
   #### WESTON ####
 
@@ -123,14 +133,8 @@
     wantedBy = [ "graphical.target" ];
   };
 
-  #   # Ensure the /etc/xdg/weston directory exists
-  # environment.etc."xdg/weston".directory = {
-  #   ensureDir = true;
-  #   mode = "0755";
-  #   owner = "root";
-  #   group = "root";
-  # };
-
+  # create the directory /etc/tfc during build
+  environment.etc."tfc".source = "/var/tfc";
 
   # Add the weston.ini file to /etc/xdg/weston/weston.ini
   environment.etc."xdg/weston/weston.ini".text = ''
