@@ -9,6 +9,7 @@ let
       nixos-install-tools
       util-linux
       config.nix.package
+      evtest
     ];
     text = ''
       set -euo pipefail
@@ -36,14 +37,34 @@ let
       DISKO_DEVICE_MAIN=''${DEVICE_MAIN#"/dev/"} ${targetSystem.config.system.build.diskoScript} 2> /dev/null
 
       echo "Copying configuration files..."
-      mkdir -p /mnt/etc/nixos
-      cp -r /etc/nixos/* /mnt/etc/nixos/
+      find / -name "configuration.nix"
+      ls -alh /iso/nixos
+      mkdir -p /mnt/etc/nixos/
+      cp -r /iso/nixos/* /mnt/etc/nixos/
 
       echo "Installing the system..."
       nixos-install --no-channel-copy --no-root-password --option substituters "" --system ${targetSystem.config.system.build.toplevel}
 
-      echo "Done! Rebooting..."
-      sleep 3
+      echo "Installation complete!"
+      echo "Please:"
+      echo "Be quick and remove the USB installation drive, will reboot in 10 seconds"
+      # echo "1. Remove the USB installation drive"
+      # echo "2. Tap screen, click mouse, or press any key to reboot"
+      echo ""
+
+      # # Monitor all input devices for any event
+      # for dev in /dev/input/event*; do
+      #   evtest --grab "$dev" | grep -m 1 "type.*\(EV_KEY\|EV_ABS\)" &
+      # done
+      
+      # # Wait for any input event
+      # wait -n
+      
+      # # Kill all remaining background processes
+      # kill "$(jobs -p)" 2>/dev/null || true
+
+      sleep 10
+      echo "Rebooting..."
       reboot
     '';
   };
@@ -70,6 +91,13 @@ in
   isoImage.makeEfiBootable = true;
   isoImage.makeUsbBootable = true;
   isoImage.squashfsCompression = "zstd -Xcompression-level 15"; # xz takes forever
+  # ONE important note, the files root location is /iso, not /
+  isoImage.contents = [
+    { source = ./configuration.nix; target = "/nixos/configuration.nix"; }
+    { source = ./disko.nix;         target = "/nixos/disko.nix"; }
+    { source = ./flake.nix;         target = "/nixos/flake.nix"; }
+    { source = ./flake.lock;        target = "/nixos/flake.lock"; }
+  ];
 
   systemd.services."getty@tty1" = {
     overrideStrategy = "asDropin";
@@ -79,11 +107,6 @@ in
       StandardInput = "null";
     };
   };
-
-  environment.etc."nixos/configuration.nix".source = ./configuration.nix;
-  environment.etc."nixos/disko.nix".source = ./disko.nix;
-  environment.etc."nixos/flake.nix".source = ./flake.nix;
-  environment.etc."nixos/flake.lock".source = ./flake.lock;
 
   system.stateVersion = "24.05";
 }

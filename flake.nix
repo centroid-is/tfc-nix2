@@ -4,12 +4,15 @@
   inputs.disko.url = "github:nix-community/disko/master";
   inputs.disko.inputs.nixpkgs.follows = "nixpkgs";
 
+  inputs.tfc-packages.url = "github:centroid-is/flakes?ref=v2024.12.2";
+
   outputs = inputs: {
     nixosConfigurations = {
-      nixos = inputs.nixpkgs.lib.nixosSystem {
+      tfc = inputs.nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = {
-          inherit (inputs.self.packages.x86_64-linux) tfc-hmi;
+          # Make tfc-packages available to configuration.nix
+          inherit (inputs) tfc-packages;
         };
         modules = [
           inputs.disko.nixosModules.disko
@@ -19,7 +22,7 @@
       iso = inputs.nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = {
-          targetSystem = inputs.self.nixosConfigurations.nixos;
+          targetSystem = inputs.self.nixosConfigurations.tfc;
         };
         modules = [
           ./iso.nix
@@ -57,35 +60,6 @@
           -device virtio-net-pci,netdev=net0 \
           -vnc :0
       '';
-    };
-    packages.x86_64-linux.tfc-hmi = let
-      pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
-      version = "2024.12.3";
-      src = pkgs.fetchurl {
-        url = "https://github.com/centroid-is/tfc-hmi/releases/download/v${version}/example-elinux.tar.gz";
-        sha256 = "278dddd44e93ff1936886a4ad7f97913fc36307ee64ab81980444837a07c3338";
-      };
-      tfc-hmi-bin = pkgs.stdenv.mkDerivation {
-        pname = "tfc-hmi-bin";
-        version = version;
-        src = src;
-        sourceRoot = ".";
-        installPhase = ''
-          mkdir -p $out
-          cp -r * $out/
-        '';
-      };
-    in pkgs.buildFHSUserEnv {
-      name = "tfc-hmi";
-      targetPkgs = pkgs: [
-        pkgs.wayland
-        pkgs.libxkbcommon
-        pkgs.fontconfig
-        pkgs.libGL
-        pkgs.vulkan-loader
-        pkgs.mesa
-      ];
-      runScript = "${tfc-hmi-bin}/example --bundle=${tfc-hmi-bin}";
     };
   };
 }

@@ -2,13 +2,15 @@
 # your system. Help is available in the configuration.nix(5) man page, on
 # https://search.nixos.org/options and in the NixOS manual (`nixos-help`).
 
-{ config, lib, pkgs, modulesPath, tfc-hmi, ... }:
+{ config, lib, pkgs, modulesPath, tfc-packages, ... }:
 
 {
   imports = [
     #(modulesPath + "/profiles/all-hardware.nix")
     ./disko.nix
+    # tfc-packages.nixosModules.tfc-hmi
   ];
+  # services.tfc-hmi.enable = true;
 
   boot.kernelPackages = pkgs.linuxPackages-rt;
   # Use the systemd-boot EFI boot loader.
@@ -40,12 +42,12 @@
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.tfc = {
     isNormalUser = true;
-    extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
+    extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user. And allow networkmanager access.
     password = "tfc";
     shell = "${pkgs.fish}/bin/fish";
     packages = with pkgs; [
-      tfc-hmi
       tree
+      # tfc-packages.packages.x86_64-linux.tfc-hmi
     ];
   };
   nixpkgs.config.allowUnfree = true;
@@ -262,40 +264,23 @@
 
   #### END WESTON ####
 
-  systemd.services.tfc-hmi = {
-    description = "tfc-hmi";
-    serviceConfig = {
-      ExecStart = "${tfc-hmi}/bin/tfc-hmi";
-      RuntimeDirectory = "tfc";
-      User = "tfc";
-      Group = "users";
-    };
-    environment = {
-      WAYLAND_DISPLAY = "wayland-1";
-      XDG_RUNTIME_DIR = "/run/user/1000"; # todo get 1000 from user
-    };
-    after = [ "weston.service" ];
-    wantedBy = [ "default.target" ];
-  };
-
-
-services.dbus.packages = [
-  (pkgs.writeTextFile {
-    name = "dbus-centroid-conf";
-    destination = "/share/dbus-1/system.d/is.centroid.conf";
-    text = ''
-      <!DOCTYPE busconfig PUBLIC
-       "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
-       "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
-      <busconfig>
-       <policy context="default">
-        <allow own_prefix="is.centroid"/>
-        <allow send_destination_prefix="is.centroid"/>
-       </policy>
-      </busconfig>
-    '';
-  })
-];
+  services.dbus.packages = [
+    (pkgs.writeTextFile {
+      name = "dbus-centroid-conf";
+      destination = "/share/dbus-1/system.d/is.centroid.conf";
+      text = ''
+        <!DOCTYPE busconfig PUBLIC
+        "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
+        "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+        <busconfig>
+        <policy context="default">
+          <allow own_prefix="is.centroid"/>
+          <allow send_destination_prefix="is.centroid"/>
+        </policy>
+        </busconfig>
+      '';
+    })
+  ];
 
   # This option defines the first version of NixOS you have installed on this particular machine,
   # and is used to maintain compatibility with application data (e.g. databases) created on older NixOS versions.
@@ -315,4 +300,9 @@ services.dbus.packages = [
   #
   # For more information, see `man configuration.nix` or https://nixos.org/manual/nixos/stable/options#opt-system.stateVersion .
   system.stateVersion = "24.05"; # Did you read the comment?
+
+  # Enable flakes
+  nix.settings = {
+    experimental-features = [ "nix-command" "flakes" ];
+  };
 }
