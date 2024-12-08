@@ -3,17 +3,19 @@
 {
   # Import the base configuration from parent directory
   imports = [ 
-    ../configuration.nix 
+    ./base-configuration.nix 
   ];
 
   # Your customizations here
-  networking.hostName = "custom-tfc";
+  networking.hostName = lib.mkForce "linescan";
   
-  # Override or add settings
-  users.users.tfc.password = "different-password";
+#   # Override or add settings
+#   users.users.tfc.password = "different-password";
   
-  environment.systemPackages = with pkgs; [
-    git
-    htop
+  environment.systemPackages = lib.mkMerge [
+    (with pkgs; [
+        git
+        htop
+    ])
   ];
 }

@@ -35,3 +35,5 @@ For linescan example:
 ```bash
 GITHUB_TOKEN=<your token> nix run -L .#linescan --impure
 ```
+
+symlink
