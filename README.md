@@ -24,3 +24,14 @@ ssh -p 2222 tfc@localhost
 rm disk1.qcow2
 nix run -L .
 ```
+
+# Building various images
+
+## Run in qemu
+```bash
+nix run -L .#default # or nix run -L .
+```
+For linescan example:
+```bash
+GITHUB_TOKEN=<your token> nix run -L .#linescan --impure
+```
