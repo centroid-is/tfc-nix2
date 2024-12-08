@@ -97,7 +97,7 @@ in
     { source = ../base-configuration.nix; target = "/nixos/base-configuration.nix"; }
     { source = ../disko.nix;         target = "/nixos/disko.nix"; }
     { source = ../flake.nix;         target = "/nixos/flake.nix"; }
-    { source = ../flake.lock;        target = "/nixos/flake.lock"; }
+    { source = ./flake.lock;        target = "/nixos/flake.lock"; }
   ];
 
   systemd.services."getty@tty1" = {
