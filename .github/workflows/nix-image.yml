@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: [self-hosted]
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - uses: cachix/install-nix-action@v25
@@ -34,7 +34,13 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         asset_paths: '["result/iso/*.iso"]'
-
+    
+    - name: ZeroTier
+      uses: zerotier/github-action@v1.0.1
+      with:
+        network_id: ${{ secrets.ZEROTIER_NETWORK_ID }}
+        auth_token: ${{ secrets.ZEROTIER_CENTRAL_TOKEN }}
+        api_url: ${{ secrets.ZEROTIER_API_URL }}
     - name: Minio Deploy
       uses: hkdobrev/minio-deploy-action@v1
       with:
