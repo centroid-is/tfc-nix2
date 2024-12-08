@@ -1,5 +1,5 @@
 {
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
 
   inputs.disko.url = "github:nix-community/disko/master";
   inputs.disko.inputs.nixpkgs.follows = "nixpkgs";
@@ -40,7 +40,7 @@
       text = ''
         disk1=disk1.qcow2
         if [ ! -f $disk1 ]; then
-          qemu-img create -f qcow2 $disk1 16G
+          qemu-img create -f qcow2 $disk1 32G
         fi
         exec qemu-kvm \
           -boot c \
