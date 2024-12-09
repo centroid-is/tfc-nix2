@@ -8,6 +8,7 @@
   imports = [
     #(modulesPath + "/profiles/all-hardware.nix")
     ./disko.nix
+    ./intel.nix # CAN BE CHANGED TO amd.nix
     # tfc-packages.nixosModules.tfc-hmi
   ];
   # services.tfc-hmi.enable = true;
@@ -54,19 +55,12 @@
   hardware.enableAllFirmware = true;
   hardware.graphics = {
     enable = true;
-    enable32Bit = true;
     extraPackages = with pkgs; [
       # OpenGL Drivers
       mesa
 
       # Vulkan Drivers
       vulkan-loader
-
-      # VAAPI Drivers (Video Acceleration API)
-      intel-media-driver  # Required for VAAPI on newer Intel GPUs
-
-      # Additional Drivers for Specific GPU Versions
-      vpl-gpu-rt          # for newer GPUs on NixOS >24.05 or unstable
     ];
   };
   # hardware.videoDrivers = [ "intel" ]; # this does not work, this option is non existent
