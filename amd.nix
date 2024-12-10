@@ -1,9 +1,9 @@
 { config, lib, pkgs, ... }:
 
 {
-  hardware.opengl = {
+  hardware.graphics = {
     extraPackages = with pkgs; [
-      rocm-opencl-icd
+      mesa.opencl
       amdvlk
     ];
   };
