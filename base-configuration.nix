@@ -102,7 +102,7 @@
   #### WESTON ####
 
   # Allow VNC connections on port 5900
-  networking.firewall.allowedTCPPorts = [ 5900 ];
+  networking.firewall.allowedTCPPorts = [ 22 5900 ];
 
   systemd.services.create-keys = {
     description = "Create TLS keys and certificates on startup";
@@ -224,6 +224,8 @@
       Group = "users";
       WorkingDirectory = "/home/tfc";
       PAMName = "weston-autologin";
+      Restart = "always";
+      RestartSec = "3";
 
       # Optional Watchdog settings (uncomment if needed)
       # TimeoutStartSec = "60";
